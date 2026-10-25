@@ -113,9 +113,10 @@ because the game only loads `.pyc` files from its own version; CI does that. For
 on another Python, `python sims4-mod/build.py --source` makes a mod from the sources.
 
 **Releasing:** set the same version in `Voxta.Modules.Sims4/module.json` and `MOD_VERSION` in
-`sims4-mod/src/voxta_bridge/__init__.py` (CI checks they match), commit, then
-`git tag v0.1.0 && git push --tags`. The release gets the module zip Voxta installs and the game
-mod zip. A tag like `v0.2.0-beta.1` makes a pre-release.
+`sims4-mod/src/voxta_bridge/__init__.py` (CI checks they match) and commit. Then either click
+**Actions → publish release → Run workflow**, or `git tag v0.1.0 && git push --tags`. The release
+gets the module zip Voxta installs and the game mod zip. A version like `0.2.0-beta.1` makes a
+pre-release.
 
 The module's release pipeline is Voxta's own ([voxta-module-template](https://github.com/voxta-ai/voxta-module-template)):
 see there for Voxta's trusted-repository listing and verifying releases.
