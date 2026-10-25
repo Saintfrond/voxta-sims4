@@ -36,9 +36,9 @@ public class ModuleConfigurationProvider : ModuleConfigurationProviderBase, IMod
         DefaultValue = UserIsWatcher,
         Choices =
         [
-            new FormChoicesField.Choice { Value = UserIsWatcher, Label = "The Watcher (the player who controls their lives)" },
-            new FormChoicesField.Choice { Value = UserIsActiveSim, Label = "The Sim I'm currently controlling" },
-            new FormChoicesField.Choice { Value = UserIsCustom, Label = "Custom (write it below)" },
+            new() { Value = UserIsWatcher, Label = "The Watcher (the player who controls their lives)" },
+            new() { Value = UserIsActiveSim, Label = "The Sim I'm currently controlling" },
+            new() { Value = UserIsCustom, Label = "Custom (write it below)" },
         ],
     };
 
@@ -92,9 +92,9 @@ public class ModuleConfigurationProvider : ModuleConfigurationProviderBase, IMod
         DefaultValue = EventsSilent,
         Choices =
         [
-            new FormChoicesField.Choice { Value = EventsOff, Label = "Ignore them" },
-            new FormChoicesField.Choice { Value = EventsSilent, Label = "Tell the character quietly (it may bring it up next reply)" },
-            new FormChoicesField.Choice { Value = EventsReact, Label = "Let the character react right away" },
+            new() { Value = EventsOff, Label = "Ignore them" },
+            new() { Value = EventsSilent, Label = "Tell the character quietly (it may bring it up next reply)" },
+            new() { Value = EventsReact, Label = "Let the character react right away" },
         ],
     };
 

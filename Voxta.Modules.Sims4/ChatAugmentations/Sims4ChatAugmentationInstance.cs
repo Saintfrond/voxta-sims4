@@ -210,7 +210,7 @@ public sealed partial class Sims4ChatAugmentationInstance : IChatScriptEventsAug
             case UserMessageReceivedActionScriptEvent userMessage:
                 _userTyping = false;
                 if (_settings.ShowUserMessagesInGame)
-                    await ShowInGameAsync(_session.User.Name, userMessage.Message, cancellationToken, isUser: true);
+                    await ShowInGameAsync(_session.User.Name, userMessage.Message.Value, cancellationToken, isUser: true);
                 break;
 
             case TypingStartScriptEvent:
