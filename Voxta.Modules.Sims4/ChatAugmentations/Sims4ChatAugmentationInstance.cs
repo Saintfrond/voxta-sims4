@@ -279,7 +279,7 @@ public sealed partial class Sims4ChatAugmentationInstance : IChatScriptEventsAug
         _bridge.StateChanged -= OnStateChanged;
         _bridge.ConnectionChanged -= OnConnectionChanged;
         _bridge.EventReceived -= OnGameEvent;
+        // Cancelled, not disposed: a debounce or event task may still be about to read the token.
         await _cts.CancelAsync();
-        _cts.Dispose();
     }
 }
