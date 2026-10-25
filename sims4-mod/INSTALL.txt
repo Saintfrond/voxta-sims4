@@ -1,0 +1,22 @@
+VOXTA BRIDGE FOR THE SIMS 4
+===========================
+
+1. Put this whole "Voxta" folder into your Mods folder:
+   Documents\Electronic Arts\The Sims 4\Mods\Voxta\
+   (voxta_bridge.ts4script must be no deeper than one folder inside Mods.)
+
+2. In the game: Options -> Game Options -> Other ->
+   tick "Enable Custom Content and Mods" and "Script Mods Allowed", then restart the game.
+
+3. In Voxta Server: add the "The Sims 4" module, and turn on the "sims4" augmentation
+   for a character whose name matches one of your Sims (e.g. "Bella Goth" or just "Bella").
+
+4. Load your household. The mod connects to Voxta by itself.
+
+Cheat console (Ctrl+Shift+C):
+   voxta.status     connection and household check
+   voxta.test       shows a test notification
+   voxta.reconnect  try connecting again now
+   voxta.dump       writes what the mod sees to voxta_bridge.log
+
+Problems? Look at voxta_bridge.log in this folder.

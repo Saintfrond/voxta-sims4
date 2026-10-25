@@ -81,13 +81,13 @@ public static class HouseholdContextBuilder
         var needs = NeedsPhrase(sim);
         if (needs is not null) text.Append("  Needs: ").AppendLine(needs);
 
-        if (sim.Traits.Length > 0)
+        if (sim.Traits is { Length: > 0 })
             text.Append("  Traits: ").AppendLine(string.Join(", ", sim.Traits));
 
         if (sim.Career is { Name: not null } career)
             text.Append("  Career: ").Append(career.Name).AppendLine(career.Level is { } level ? $", level {level}" : "");
 
-        var relationships = sim.Relationships
+        var relationships = (sim.Relationships ?? [])
             .Select(r => RelationshipPhrase(r, state))
             .Where(r => r is not null)
             .ToArray();
@@ -192,7 +192,7 @@ public static class HouseholdContextBuilder
         if (string.IsNullOrWhiteSpace(name)) return null;
 
         var parts = new List<string>();
-        if (relationship.Bits.Length > 0) parts.Add(string.Join(", ", relationship.Bits.Take(3)).ToLowerInvariant());
+        if (relationship.Bits is { Length: > 0 }) parts.Add(string.Join(", ", relationship.Bits.Take(3)).ToLowerInvariant());
         if (relationship.Friendship is { } friendship) parts.Add(FeelingPhrase(friendship, "friends", "dislike each other"));
         if (relationship.Romance is { } romance and >= 15) parts.Add(romance >= 60 ? "deeply in love" : "romantic");
         parts.RemoveAll(string.IsNullOrEmpty);

@@ -4,3 +4,8 @@ dist/
 .idea/
 .vs/
 *.user
+__pycache__/
+*.pyc
+*.log
+sims4-mod/dist/
+.pytest_cache/

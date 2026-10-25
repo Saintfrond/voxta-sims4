@@ -1,103 +1,128 @@
-# Voxta module template
+# Voxta × The Sims 4
 
-Start a Voxta module with its release pipeline ready: push a tag and Voxta servers can install it from your GitHub
-repository. The code is an empty module that registers with Voxta; replace it with yours.
+Chat with the members of your Sims 4 household through [Voxta](https://voxta.ai). Each Sim gets a
+Voxta character that knows, live from your running game, how that Sim is feeling, what they need,
+what they are doing, their traits, career and relationships. What they say to you pops up in the
+game as a notification with their portrait.
 
-More examples (text generation, text to speech, tools): [voxta-sdk-examples](https://github.com/voxta-ai/voxta-sdk-examples).
-
-## Start
-
-In Voxta, with an assistant to write it with you: **Workspaces → New workspace**, start from **Voxta module** (offered
-once the Module Development module is installed), give it a name. Voxta clones this repository, renames it the way
-`dotnet new` would, and checks this machine has the .NET SDK it needs. Chats in that workspace turn on module
-development by themselves (`.voxta/workspace.json`): the assistant edits, loads the module into Voxta, reads why it
-failed and reloads it.
-
-With `dotnet new` (renames everything):
+> **Status: 0.1, experimental.** Built against Voxta 1.13 (alpha). The Voxta module compiles in CI
+> and the game mod passes its tests against a simulated game, but the mod has not had much play
+> time in the real game yet. Please report what breaks.
 
 ```
-git clone https://github.com/voxta-ai/voxta-module-template
-dotnet new install ./voxta-module-template
-dotnet new voxta-module -n Weather -o voxta-weather --authorName YourName
+ The Sims 4  ──  voxta_bridge.ts4script            Voxta Server  ──  "The Sims 4" module
+ ┌──────────────────────────────┐   localhost TCP    ┌──────────────────────────────────────┐
+ │ reads the active household   │   JSON lines       │ waits for the game on 127.0.0.1:5385 │
+ │ every few seconds            │ ───────────────►   │ "sims4" augmentation:                │
+ │ notices events (moods,       │   state + events   │  • matches characters to Sims        │
+ │ needs, promotions, ...)      │                    │  • keeps the chat context up to date │
+ │ shows replies as             │ ◄───────────────   │  • passes game events to characters  │
+ │ in-game notifications        │   notifications    │  • sends replies back to the game    │
+ └──────────────────────────────┘                    └──────────────────────────────────────┘
 ```
 
-Or **Use this template** on GitHub, then replace `MyModule` in the folder, project, solution, namespaces, `ServiceName`
-and `module.json`, `My Module` / `my_module` in the label and augmentation key, and `YourName` in `module.json`. CI fails until `MyModule` is gone.
+## Setup
 
-Commit `packages.lock.json` with the rest: builds use exactly those packages, and CI fails without it. A package change
-updates it on your next local build.
+You need two pieces: the Voxta module and the game mod. Both come from this repository's
+[Releases](https://github.com/Saintfrond/voxta-sims4/releases).
 
-## Develop
+### 1. The Voxta module
 
-1. `dotnet build`
-2. In Voxta, **Add Modules → Add Custom Module**, add the project folder, **Apply**. It shows with a Dev badge.
-3. Change, build (Voxta can keep running), **Apply**.
+In Voxta Server (1.13 or newer): **Add Modules → Module Registries**, add `Saintfrond/voxta-sims4`,
+then install **The Sims 4** from the list and add it.
 
-Load errors, including Voxta APIs your module uses that the running Voxta lacks, show on the Custom Modules page.
+The defaults work when the game and Voxta run on the same PC. Settings, under the module's
+**Configure** page:
 
-## module.json
+| Setting | What it does |
+| --- | --- |
+| Game connection port | Port the game mod connects to (default 5385). Must match `voxta_bridge.cfg`. |
+| Allow the game on another PC | Listen on the network instead of only this computer. |
+| Who are you to the Sims? | The Watcher (the player), the Sim you're controlling, or your own description. |
+| Character → Sim names | `Character Name = Sim First Last` lines, for characters whose names don't match a Sim. |
+| Show replies in the game | Character replies appear as in-game notifications. |
+| Show my messages in the game | Your messages appear too. |
+| Game events | Ignore events, tell characters quietly, or let them react right away. |
+| Seconds between reactions | Limits how often a character speaks up on its own. |
 
-| Field | |
-|---|---|
-| `id` | Unique; the assembly name |
-| `version` | Your module's version; a release tag is `v` + this |
-| `voxta` | The Voxta versions it runs on, e.g. `>=1.13.0` |
-| `label`, `description` | How Voxta lists it |
-| `author` | Your name, shown as "by YourName" on its card; clicking it lists your modules. Letters, digits, spaces, `.`, `_`, `-`, 40 at most. Names with "voxta" in them are reserved for Voxta's own modules: the build fails |
-| `category` | Which module list it is under: `Services` (the default), `Augmentations`, `Devices`, `Games` or `Other` |
-| `platforms` | Only if not all, e.g. `["win-x64"]` |
-| `python` | pip requirements, if any |
+### 2. The game mod
 
-The SDK embeds it in the DLL and generates `ModuleInfo.Version` from it.
+1. Download `voxta_bridge-<version>.zip` from the release and unzip it into
+   `Documents\Electronic Arts\The Sims 4\Mods\` so you get `Mods\Voxta\voxta_bridge.ts4script`.
+2. In the game: **Options → Game Options → Other**, tick **Enable Custom Content and Mods** and
+   **Script Mods Allowed**, then restart the game.
+3. Load your household. The mod connects to Voxta on its own and retries until Voxta is up.
 
-The `Voxta.Sdk.Modules` version is the oldest Voxta you support, `ExcludeAssets="runtime"`: Voxta provides it, so a
-newer Voxta needs no rebuild. Raise it together with `voxta` when you need something newer: **Actions → bump voxta**
-sets both, rewrites `packages.lock.json`, bumps the module's version, builds, and opens a pull request (enable
-"Allow GitHub Actions to create and approve pull requests" under Settings → Actions). Merge it and tag.
+Check it from the cheat console (Ctrl+Shift+C): `voxta.status`.
 
-## Release
+### 3. Characters
 
-1. Bump `version` in `module.json`, commit.
-2. `git tag v0.2.0 && git push --tags`. A tag with a suffix (`v0.2.0-beta.1`) is a pre-release. A repository with
-   several modules tags each one `<module id>/v0.2.0`.
+Make one Voxta character per Sim you want to talk to, named like the Sim (`Bella Goth`, or just
+`Bella` if no one else in the household is called Bella), and turn on the **The Sims 4**
+augmentation (`sims4`) for it. Write the character's personality as you see that Sim; the module
+adds the live state on top. A group chat with several of them is a family conversation.
 
-The workflows here call Voxta's reusable ones ([voxta-module-actions](https://github.com/voxta-ai/voxta-module-actions)).
-`release.yml` builds the module, attests it, and creates the GitHub release with two assets:
-`<id>-<version>-any.zip` (what Voxta installs) and `voxta-module.json` (module.json as built, the zip's sha256).
-`dotnet publish -c Release -p:VoxtaModulePack=dist` makes the same two files locally. A zip is at most 32 MB:
-download CUDA, models and other large dependencies at runtime.
+Tip: in the character's description, say how they know they are a Sim (or don't). The default
+"Watcher" setting lets them talk to you as the player who guides their lives.
 
-Users add your repository in **Add Modules → Module Registries** (`owner/repo`) and install from there. Voxta checks
-each download against the sha256 in `voxta-module.json` and GitHub's own hash of the asset.
+## What the characters know
 
-When a later Voxta breaks a release, cap its range without rebuilding: **Actions → edit release**, e.g.
-`>=1.13.0, <1.15.0`. The same workflow yanks a release.
+Refreshed every couple of seconds while you play, and only sent to the chat when something
+changes in a way they'd notice:
 
-### In Voxta's own source
+- day, time, season and lot; household name and funds
+- for each Sim in the chat: age, mood and how strong it is, needs that are low, what they're doing
+  right now (or that they're away), personality traits, career and level, relationships with the
+  rest of the household
+- a line about everyone else in the household
 
-A repository Voxta trusts also publishes to Voxta's module source, listed in every Voxta without adding the repository:
+Events a character hears about (depending on the **Game events** setting): a strong new mood, a
+need hitting critical, a promotion or demotion, ageing up, someone joining or leaving the
+household, a new marriage, engagement, best friendship and the like.
 
-1. Ask Voxta to trust it (they add it under **Admin → Module repos** in the Voxta portal, with its module ids).
-2. Protect its release tags: Settings → Rules → Rulesets, a tag ruleset on `v*`.
-3. Set the repository variable `VOXTA_PUBLISH` to `true` (`VOXTA_API_URL` picks another Voxta Cloud, e.g. staging).
+## Troubleshooting
 
-Releases then publish under the job's GitHub token, which tells Voxta Cloud the repository, commit, tag and workflow:
-no key to store. The repository has to be public, unless Voxta owns it. Deleting a release does not remove it from
-Voxta's source: yank it.
+- **`voxta.status` says not connected:** is Voxta Server running with the module added, and is
+  something else using port 5385? Both sides log: Voxta's server log, and `voxta_bridge.log` next
+  to the mod.
+- **The character doesn't know their Sim:** the Voxta log says which character didn't match and
+  lists the household. Add a `Character → Sim names` line.
+- **Nothing happens in the game at all:** script mods are off, or the `.ts4script` is more than one
+  folder deep inside `Mods`. `voxta.test` should show a notification.
+- **After a game patch:** check `voxta_bridge.log` for errors. Each value is read separately, so a
+  patch usually costs one detail (say, relationships) rather than the whole mod.
 
-## Verify a release
-
-In a public repository every zip is attested by GitHub: it was built by this repository's `release.yml` from the
-tagged commit.
+## Development
 
 ```
-gh attestation verify Voxta.Modules.MyModule-0.1.0-any.zip --repo <owner>/<repo>
+Voxta.Modules.Sims4/     the Voxta module (C#, .NET 10, Voxta.Sdk.Modules 1.13)
+  Bridge/                TCP listener and the wire format
+  Household/             character ↔ Sim matching, the context the characters read
+  ChatAugmentations/     the "sims4" augmentation
+sims4-mod/               the game mod (Python 3.7)
+  src/voxta_bridge/      connection (background thread), snapshot, events, notifications
+  tests/                 unit tests, and an end-to-end test against a fake game and fake Voxta
+docs/PROTOCOL.md         the messages between the two
 ```
 
-The build is pinned (`packages.lock.json`, deterministic compiler output): rebuild the tag with
-`dotnet publish -c Release -p:ContinuousIntegrationBuild=true` on the .NET SDK `voxta-module.json` names (`dotnetSdk`)
-and the DLL matches the one in the zip. The zip itself differs (file times).
+**Voxta module:** `dotnet build`, then in Voxta **Add Modules → Add Custom Module** and point it
+at `Voxta.Modules.Sims4`. Change, build, **Apply**. Commit `packages.lock.json` with package changes.
+
+**Game mod:** `python -m pytest sims4-mod/tests` (any Python 3.7+). Release builds need Python 3.7
+because the game only loads `.pyc` files from its own version; CI does that. For a quick local try
+on another Python, `python sims4-mod/build.py --source` makes a mod from the sources.
+
+**Releasing:** set the same version in `Voxta.Modules.Sims4/module.json` and `MOD_VERSION` in
+`sims4-mod/src/voxta_bridge/__init__.py` (CI checks they match), commit, then
+`git tag v0.1.0 && git push --tags`. The release gets the module zip Voxta installs and the game
+mod zip. A tag like `v0.2.0-beta.1` makes a pre-release.
+
+The module's release pipeline is Voxta's own ([voxta-module-template](https://github.com/voxta-ai/voxta-module-template)):
+see there for Voxta's trusted-repository listing and verifying releases.
 
 ## License
 
-MIT, for the template. Your module is yours: change `LICENSE` to whatever you publish it under.
+MIT, see [LICENSE](LICENSE).
+
+Not affiliated with or endorsed by Electronic Arts or Maxis. The Sims is a trademark of
+Electronic Arts Inc.

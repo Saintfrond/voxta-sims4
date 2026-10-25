@@ -19,3 +19,25 @@ jobs:
       # Voxta's own module source, for a repository Voxta trusts.
       publish: ${{ vars.VOXTA_PUBLISH == 'true' }}
       api-url: ${{ vars.VOXTA_API_URL || 'https://api.voxta.ai' }}
+
+  # The Sims 4 script mod, built on Python 3.7 and attached to the same release, so the release page
+  # has both halves: the module zip Voxta installs, and voxta_bridge-<version>.zip for the Mods folder.
+  sims-mod:
+    uses: ./.github/workflows/sims-mod.yml
+    permissions:
+      contents: read
+
+  sims-mod-upload:
+    needs: [release, sims-mod]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: sims-mod
+          path: dist
+      - name: Attach the Sims 4 mod to the release
+        run: gh release upload "$GITHUB_REF_NAME" dist/*.zip --clobber --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}

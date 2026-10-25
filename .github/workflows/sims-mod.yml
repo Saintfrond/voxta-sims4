@@ -1,0 +1,44 @@
+# Tests and builds the Sims 4 script mod on Python 3.7, the game's own version: the game only loads
+# .pyc files compiled by 3.7. release.yml calls this and attaches the zip to the GitHub release.
+name: sims mod
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: python:3.7-slim
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mod and module versions agree
+        run: |
+          python -c "
+          import json, re, sys
+          module = json.load(open('Voxta.Modules.Sims4/module.json'))['version']
+          mod = re.search(r'MOD_VERSION = \"([^\"]+)\"', open('sims4-mod/src/voxta_bridge/__init__.py').read()).group(1)
+          print('module.json', module, '/ mod', mod)
+          sys.exit(0 if module == mod else 'Bump MOD_VERSION in sims4-mod/src/voxta_bridge/__init__.py to match module.json')
+          "
+
+      - name: Test
+        run: |
+          pip install --quiet "pytest<8"
+          python -m pytest -q sims4-mod/tests
+
+      - name: Build
+        run: python sims4-mod/build.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sims-mod
+          path: sims4-mod/dist/voxta_bridge-*.zip
+          if-no-files-found: error
