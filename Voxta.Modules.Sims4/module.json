@@ -1,0 +1,9 @@
+{
+  "id": "Voxta.Modules.Sims4",
+  "version": "0.1.0",
+  "author": "Saintfrond",
+  "voxta": ">=1.13.0",
+  "label": "The Sims 4",
+  "category": "Games",
+  "description": "Chat with your Sims 4 household. Characters know their Sim's live mood, needs, traits, career and what they are doing, and their replies show up in the game as notifications. Needs the companion Sims 4 script mod."
+}
