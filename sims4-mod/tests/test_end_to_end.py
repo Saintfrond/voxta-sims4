@@ -20,6 +20,7 @@ sys.path.insert(0, HERE)
 import fake_game  # noqa: E402
 
 COMPILED = os.environ.get("VOXTA_BRIDGE_COMPILED") == "1"
+VERSION = re.search(r'MOD_VERSION = "([^"]+)"', open(os.path.join(MOD, "src", "voxta_bridge", "__init__.py")).read()).group(1)
 
 
 class FakeVoxta(object):
@@ -134,7 +135,7 @@ def test_connects_and_says_hello(setup):
     game, voxta, folder, _ = setup
     assert wait_for(game, lambda: voxta.of_type("hello"))
     hello = voxta.of_type("hello")[0]
-    assert hello == {"type": "hello", "protocol": 1, "mod_version": "0.1.0"}
+    assert hello == {"type": "hello", "protocol": 1, "mod_version": VERSION}
 
 
 def test_sends_household_state(setup):
@@ -253,6 +254,6 @@ def test_reconnects_after_voxta_drops(setup):
 def test_log_file_written(setup):
     game, voxta, folder, _ = setup
     log_text = (folder / "voxta_bridge.log").read_text(encoding="utf-8")
-    assert "Voxta bridge 0.1.0 loaded" in log_text
+    assert "Voxta bridge {} loaded".format(VERSION) in log_text
     assert "Connected to Voxta" in log_text
     assert "ERROR" not in log_text, log_text

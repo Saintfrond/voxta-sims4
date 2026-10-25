@@ -1,6 +1,6 @@
 {
   "id": "Voxta.Modules.Sims4",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "author": "Saintfrond",
   "voxta": ">=1.13.0",
   "label": "The Sims 4",
