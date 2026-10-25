@@ -5,6 +5,8 @@ name: release
 on:
   push:
     tags: ['v*', '*/v*']
+  # Started on a tag by publish.yml (the one-click release). Run it only on a tag, never on a branch.
+  workflow_dispatch:
 
 permissions: {}
 
