@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Voxta.Modules.Sims4.Bridge;
 
@@ -13,9 +14,43 @@ namespace Voxta.Modules.Sims4.Bridge;
 ///
 /// One game at a time. A new connection replaces the old one, which is what happens when the game
 /// restarts before the old socket has noticed it is dead.
+///
+/// Created and started when Voxta loads the module (see <see cref="VoxtaModule"/>), on the default
+/// port, so the game can connect before any chat starts. Chats then move it to the configured port
+/// if that differs. The logger is attached once dependency injection is up.
 /// </summary>
-public sealed class SimsBridge(ILogger<SimsBridge> logger) : IAsyncDisposable
+public sealed class SimsBridge : IAsyncDisposable
 {
+    public const int DefaultPort = 5385;
+
+    private static readonly Lock SharedGate = new();
+    private static SimsBridge? _shared;
+    private bool _disposed;
+
+    /// <summary>
+    /// The bridge for this process. Voxta may run a module's setup more than once; a second bridge
+    /// would find the port taken by the first, so there is only ever one live instance.
+    /// </summary>
+    public static SimsBridge GetOrCreate()
+    {
+        lock (SharedGate)
+        {
+            if (_shared is null || _shared._disposed)
+                _shared = new SimsBridge();
+            return _shared;
+        }
+    }
+
+    private SimsBridge()
+    {
+    }
+
+    /// <summary>How often to try again when the port is taken, e.g. by the previous version of this module during an update.</summary>
+    private static readonly TimeSpan BindRetryDelay = TimeSpan.FromSeconds(10);
+
+    private ILogger logger = NullLogger.Instance;
+    private CancellationTokenSource? _bindRetryCts;
+
     /// <summary>A game state line is a few kilobytes. Anything this long is not the mod talking.</summary>
     private const int MaxLineLength = 1024 * 1024;
 
@@ -45,25 +80,81 @@ public sealed class SimsBridge(ILogger<SimsBridge> logger) : IAsyncDisposable
     /// Starts listening, or moves to a new port or address if the settings changed. Cheap to call
     /// every time a chat starts.
     /// </summary>
+    public void AttachLogger(ILoggerFactory loggerFactory)
+    {
+        if (logger is not NullLogger) return;
+        logger = loggerFactory.CreateLogger<SimsBridge>();
+        lock (_gate)
+        {
+            if (_endpoint is not null)
+                logger.LogInformation("The Sims 4 bridge is waiting for the game on {Endpoint}", _endpoint);
+            else if (_wantedEndpoint is not null)
+                logger.LogWarning("The Sims 4 bridge cannot listen on {Endpoint} yet (port in use?); retrying every {Seconds}s", _wantedEndpoint, BindRetryDelay.TotalSeconds);
+        }
+    }
+
+    private IPEndPoint? _wantedEndpoint;
+
     public void EnsureListening(int port, bool anyInterface)
     {
         var endpoint = new IPEndPoint(anyInterface ? IPAddress.Any : IPAddress.Loopback, port);
         lock (_gate)
         {
-            if (_listener is not null && endpoint.Equals(_endpoint))
+            if (endpoint.Equals(_wantedEndpoint) && (_listener is not null || _bindRetryCts is not null))
                 return;
 
+            _wantedEndpoint = endpoint;
+            _bindRetryCts?.Cancel();
+            _bindRetryCts = null;
             StopListeningLocked();
 
+            if (!TryStartLocked(endpoint))
+            {
+                logger.LogWarning(
+                    "The Sims 4 bridge could not listen on {Endpoint}. Is another program using port {Port}? Retrying every {Seconds}s.",
+                    endpoint, port, BindRetryDelay.TotalSeconds);
+                var cts = new CancellationTokenSource();
+                _bindRetryCts = cts;
+                _ = RetryBindAsync(endpoint, cts.Token);
+            }
+        }
+    }
+
+    private async Task RetryBindAsync(IPEndPoint endpoint, CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(BindRetryDelay, cancellationToken);
+                lock (_gate)
+                {
+                    if (cancellationToken.IsCancellationRequested) return;
+                    if (TryStartLocked(endpoint))
+                    {
+                        _bindRetryCts = null;
+                        return;
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Settings changed or the module is unloading.
+        }
+    }
+
+    private bool TryStartLocked(IPEndPoint endpoint)
+    {
+        {
             var listener = new TcpListener(endpoint);
             try
             {
                 listener.Start();
             }
-            catch (SocketException exc)
+            catch (SocketException)
             {
-                logger.LogError(exc, "The Sims 4 bridge could not listen on {Endpoint}. Is another program using port {Port}?", endpoint, port);
-                return;
+                return false;
             }
 
             _listener = listener;
@@ -71,6 +162,7 @@ public sealed class SimsBridge(ILogger<SimsBridge> logger) : IAsyncDisposable
             _listenerCts = new CancellationTokenSource();
             _ = AcceptLoopAsync(listener, _listenerCts.Token);
             logger.LogInformation("The Sims 4 bridge is waiting for the game on {Endpoint}", endpoint);
+            return true;
         }
     }
 
@@ -280,9 +372,13 @@ public sealed class SimsBridge(ILogger<SimsBridge> logger) : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
         GameConnection? connection;
         lock (_gate)
         {
+            _bindRetryCts?.Cancel();
+            _bindRetryCts = null;
+            _wantedEndpoint = null;
             StopListeningLocked();
             connection = _connection;
             _connection = null;

@@ -31,8 +31,13 @@ public class VoxtaModule : IVoxtaModule
             ModuleConfigurationFieldsRequiringReload = ModuleConfigurationProvider.FieldsRequiringReload,
         });
 
-        // One game connection for the whole server, shared by every chat.
-        builder.Services.AddSingleton<SimsBridge>();
+        // One game connection for the whole server, shared by every chat. Started right away on the
+        // default port, so the game can connect (and `voxta.status` says so) before any chat exists;
+        // chats move it to the configured port if that differs. Registered through a factory so the
+        // container disposes it, freeing the port, when Voxta unloads or updates the module.
+        var bridge = SimsBridge.GetOrCreate();
+        bridge.EnsureListening(SimsBridge.DefaultPort, anyInterface: false);
+        builder.Services.AddSingleton(_ => bridge);
         builder.AddChatAugmentationsService<ChatAugmentationsService>(Sims4Constants.ServiceName);
     }
 }

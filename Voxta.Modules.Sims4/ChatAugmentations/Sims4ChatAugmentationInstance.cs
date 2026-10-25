@@ -17,8 +17,8 @@ namespace Voxta.Modules.Sims4.ChatAugmentations;
 /// One chat with the household. It keeps the chat's context in step with the game, passes notable
 /// game events to the characters, and sends what they say back into the game.
 ///
-/// Characters are matched to Sims by name. The main character is known from the start; in a group
-/// chat the others are picked up the first time they speak.
+/// Characters are matched to Sims by name. Everyone in the chat is known from the start; characters
+/// a scenario enables later are picked up the first time they speak.
 /// </summary>
 public sealed partial class Sims4ChatAugmentationInstance : IChatScriptEventsAugmentation
 {
@@ -59,7 +59,14 @@ public sealed partial class Sims4ChatAugmentationInstance : IChatScriptEventsAug
         _logger = logger;
         _matcher = new SimMatcher(settings.NameAliases);
         _cts = CancellationTokenSource.CreateLinkedTokenSource(session.Abort);
+        // Everyone in the chat from the start, so every Sim's state is there for the first reply.
+        // Characters a scenario brings in later are picked up when they first speak.
         _characters.TryAdd(session.MainCharacter.Name, 0);
+        foreach (var character in session.Chat.GetCharacters())
+        {
+            if (character.Enabled)
+                _characters.TryAdd(character.Name, 0);
+        }
 
         _bridge.StateChanged += OnStateChanged;
         _bridge.ConnectionChanged += OnConnectionChanged;

@@ -19,13 +19,21 @@ public class ChatAugmentationsService(
     SimsBridge bridge
 ) : ServiceBase(logger), IChatAugmentationsService
 {
+    private readonly SimsBridge _bridge = AttachLogging(bridge, loggerFactory);
+
+    private static SimsBridge AttachLogging(SimsBridge bridge, ILoggerFactory loggerFactory)
+    {
+        bridge.AttachLogger(loggerFactory);
+        return bridge;
+    }
+
     public Task<AugmentationPlanItem[]> PlanAsync(
         IChatAugmentationPlanContext context,
         CancellationToken cancellationToken
     )
     {
         var settings = ReadSettings();
-        bridge.EnsureListening(settings.Port, settings.AllowRemoteGame);
+        _bridge.EnsureListening(settings.Port, settings.AllowRemoteGame);
 
         var augmentation = Sims4Constants.Augmentations.Get(Sims4Constants.AugmentationKey);
         return Task.FromResult<AugmentationPlanItem[]>([
@@ -42,7 +50,7 @@ public class ChatAugmentationsService(
                 {
                     var instance = new Sims4ChatAugmentationInstance(
                         session,
-                        bridge,
+                        _bridge,
                         settings,
                         loggerFactory.CreateLogger<Sims4ChatAugmentationInstance>()
                     );
@@ -58,8 +66,8 @@ public class ChatAugmentationsService(
         var portText = ModuleConfiguration.GetRequired(ModuleConfigurationProvider.Port);
         if (!int.TryParse(portText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var port) || port is < 1 or > 65535)
         {
-            logger.LogWarning("'{Port}' is not a valid port for the Sims 4 bridge, using 5385", portText);
-            port = 5385;
+            logger.LogWarning("'{Port}' is not a valid port for the Sims 4 bridge, using {Default}", portText, SimsBridge.DefaultPort);
+            port = SimsBridge.DefaultPort;
         }
 
         var cooldownText = ModuleConfiguration.GetRequired(ModuleConfigurationProvider.ReactCooldownSeconds);
