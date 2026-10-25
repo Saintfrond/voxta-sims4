@@ -29,7 +29,9 @@ jobs:
           sys.exit(0 if module == mod else 'Bump MOD_VERSION in sims4-mod/src/voxta_bridge/__init__.py to match module.json')
           "
 
-      - name: Test
+      - name: Test (against the compiled build, like the game loads it)
+        env:
+          VOXTA_BRIDGE_COMPILED: "1"
         run: |
           pip install --quiet "pytest<8"
           python -m pytest -q sims4-mod/tests

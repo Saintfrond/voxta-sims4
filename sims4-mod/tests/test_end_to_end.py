@@ -19,6 +19,8 @@ sys.path.insert(0, HERE)
 
 import fake_game  # noqa: E402
 
+COMPILED = os.environ.get("VOXTA_BRIDGE_COMPILED") == "1"
+
 
 class FakeVoxta(object):
     """The Voxta side of the protocol: listens, says hello, records what the game sends."""
@@ -85,7 +87,12 @@ def wait_for(game, condition, timeout=5.0):
 
 @pytest.fixture(scope="module")
 def setup(tmp_path_factory):
-    subprocess.check_call([sys.executable, os.path.join(MOD, "build.py"), "--source"])
+    # CI on Python 3.7 sets VOXTA_BRIDGE_COMPILED=1: the test then imports the real release build,
+    # sourceless .pyc files from a zip, which is exactly how the game loads it.
+    build = [sys.executable, os.path.join(MOD, "build.py")]
+    if not COMPILED:
+        build.append("--source")
+    subprocess.check_call(build)
     voxta = FakeVoxta()
 
     mods = tmp_path_factory.mktemp("Mods")
@@ -107,6 +114,20 @@ def setup(tmp_path_factory):
     assert voxta_bridge.__file__.startswith(str(script)), "must be imported from the .ts4script"
     zone.Zone().on_loading_screen_animation_finished()
     return game, voxta, folder, (bella, mortimer, alexander)
+
+
+def test_build_contents(setup):
+    import importlib.util
+    import zipfile
+
+    names = zipfile.ZipFile(os.path.join(MOD, "dist", "voxta_bridge.ts4script")).namelist()
+    assert "voxta_bridge/__init__.py" + ("c" if COMPILED else "") in names
+    assert "voxta_bridge/main.py" + ("c" if COMPILED else "") in names
+    if COMPILED:
+        archive = zipfile.ZipFile(os.path.join(MOD, "dist", "voxta_bridge.ts4script"))
+        assert all(n.endswith(".pyc") for n in names), names
+        assert all(archive.read(n)[:4] == importlib.util.MAGIC_NUMBER for n in names)
+        assert sys.version_info[:2] == (3, 7), "compiled builds must come from Python 3.7"
 
 
 def test_connects_and_says_hello(setup):
