@@ -212,6 +212,12 @@ public sealed partial class Sims4ChatAugmentationInstance : IChatScriptEventsAug
                 _generating = false;
                 if (_settings.ShowRepliesInGame)
                     await ShowInGameAsync(complete.Character.Name, complete.Message.Value, cancellationToken);
+                // Without text to speech there is no speechStart; the reply being ready is the moment.
+                await FocusCameraAsync(complete.Character.Name, cancellationToken);
+                break;
+
+            case SpeechStartActionScriptEvent speech:
+                await FocusCameraAsync(speech.Character.Name, cancellationToken);
                 break;
 
             case UserMessageReceivedActionScriptEvent userMessage:
@@ -243,6 +249,30 @@ public sealed partial class Sims4ChatAugmentationInstance : IChatScriptEventsAug
             SimId = sim?.Id,
             Title = sim?.FullName ?? speaker,
             Text = ForNotification(text),
+        }, cancellationToken);
+    }
+
+    private string? _lastFocusSimId;
+    private DateTimeOffset _lastFocusAt = DateTimeOffset.MinValue;
+
+    /// <summary>Same speaker again within this time (the reply finishing, then its speech starting): don't move the camera twice.</summary>
+    private static readonly TimeSpan FocusRepeatWindow = TimeSpan.FromSeconds(10);
+
+    private async Task FocusCameraAsync(string characterName, CancellationToken cancellationToken)
+    {
+        if (_settings.CameraFocus == ModuleConfigurationProvider.CameraOff || !_bridge.IsConnected) return;
+        var sim = Match(characterName, _bridge.State);
+        if (sim is not { OnLot: true }) return;
+
+        var now = DateTimeOffset.UtcNow;
+        if (sim.Id == _lastFocusSimId && now - _lastFocusAt < FocusRepeatWindow) return;
+        _lastFocusSimId = sim.Id;
+        _lastFocusAt = now;
+
+        await _bridge.FocusAsync(new FocusCommand
+        {
+            SimId = sim.Id,
+            Follow = _settings.CameraFocus == ModuleConfigurationProvider.CameraFollow,
         }, cancellationToken);
     }
 

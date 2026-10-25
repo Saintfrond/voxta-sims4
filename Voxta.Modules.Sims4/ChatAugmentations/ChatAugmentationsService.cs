@@ -82,6 +82,7 @@ public class ChatAugmentationsService(
             NameAliases: ModuleConfiguration.GetRequired(ModuleConfigurationProvider.NameAliases),
             ShowRepliesInGame: ModuleConfiguration.GetRequired(ModuleConfigurationProvider.ShowRepliesInGame),
             ShowUserMessagesInGame: ModuleConfiguration.GetRequired(ModuleConfigurationProvider.ShowUserMessagesInGame),
+            CameraFocus: ModuleConfiguration.GetRequired(ModuleConfigurationProvider.CameraFocus),
             GameEvents: ModuleConfiguration.GetRequired(ModuleConfigurationProvider.GameEvents),
             ReactCooldown: TimeSpan.FromSeconds(cooldown)
         );
@@ -97,6 +98,7 @@ public sealed record Sims4Settings(
     string? NameAliases,
     bool ShowRepliesInGame,
     bool ShowUserMessagesInGame,
+    string CameraFocus,
     string GameEvents,
     TimeSpan ReactCooldown
 );

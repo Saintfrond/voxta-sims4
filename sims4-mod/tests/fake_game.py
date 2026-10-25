@@ -169,6 +169,7 @@ class FakeGame(object):
         self.season = None
         self.lot_name = "Willow Creek Home"
         self.notifications = []  # (title, text, icon sim_info or None)
+        self.camera = []  # (sim instance, follow)
         self.alarms = []  # [owner, callback, repeating, cancelled]
         self.commands = {}
         self.command_output = []
@@ -256,6 +257,12 @@ def install():
 
     module("alarms", add_alarm_real_time=add_alarm_real_time, cancel_alarm=cancel_alarm)
     module("clock", interval_in_real_seconds=lambda s: ("real_seconds", s), ClockSpeedMode=ClockSpeedMode)
+
+    # camera
+    def focus_on_sim(sim=None, follow=True, client=None):
+        game.camera.append((sim, follow))
+
+    module("camera", focus_on_sim=focus_on_sim)
 
     # zone
     class Zone(object):

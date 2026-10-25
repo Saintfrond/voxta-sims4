@@ -17,7 +17,7 @@ import sims4.commands
 from zone import Zone
 
 from . import MOD_VERSION, PROTOCOL_VERSION
-from . import config, connection, events, log, notify, snapshot
+from . import camera_focus, config, connection, events, log, notify, snapshot
 
 _TICK_SECONDS = 1.0
 _ERROR_LOG_INTERVAL = 60.0
@@ -107,6 +107,8 @@ class _Bridge(object):
         elif kind == "notify":
             notify.show(message.get("title"), message.get("text"), message.get("sim_id"))
             self.notifications_shown += 1
+        elif kind == "focus":
+            camera_focus.focus(message.get("sim_id"), message.get("follow", False))
         elif kind == "request_state":
             self.force_state = True
         elif kind == "pong":

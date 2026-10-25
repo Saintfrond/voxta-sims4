@@ -6,7 +6,7 @@ chat with your household members. Python 3.7, like the game.
 Only main.py touches the game at import time; the rest can be imported (and tested) outside it.
 """
 
-MOD_VERSION = "0.1.0-alpha.2"
+MOD_VERSION = "0.1.0-alpha.3"
 PROTOCOL_VERSION = 1
 
 

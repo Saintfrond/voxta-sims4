@@ -79,6 +79,15 @@ Sent when the mod drops the connection on purpose (`voxta.reconnect`).
 
 `sim_id` is optional; with it, the notification shows that Sim's portrait.
 
+### `focus` (point the game camera at a Sim)
+
+```json
+{"type": "focus", "sim_id": "101", "follow": false}
+```
+
+Only acts for a Sim on the current lot. `follow: true` keeps the camera on them until the player
+moves it; otherwise it pans once.
+
 ### `request_state`
 
 Asks the game to send a full `state` now (a chat just started and wants fresh data).

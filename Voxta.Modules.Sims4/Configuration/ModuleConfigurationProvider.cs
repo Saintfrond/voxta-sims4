@@ -80,6 +80,24 @@ public class ModuleConfigurationProvider : ModuleConfigurationProviderBase, IMod
         DefaultValue = false,
     };
 
+    public const string CameraOff = "off";
+    public const string CameraPan = "pan";
+    public const string CameraFollow = "follow";
+
+    public static readonly FormChoicesField CameraFocus = new()
+    {
+        Name = "CameraFocus",
+        Label = "Camera on the speaker",
+        Text = "Move the game camera to the Sim whose character is speaking (only Sims on the current lot).",
+        DefaultValue = CameraPan,
+        Choices =
+        [
+            new() { Value = CameraOff, Label = "Off" },
+            new() { Value = CameraPan, Label = "Pan to the speaker" },
+            new() { Value = CameraFollow, Label = "Follow the speaker until someone else talks" },
+        ],
+    };
+
     public const string EventsOff = "off";
     public const string EventsSilent = "silent";
     public const string EventsReact = "react";
@@ -123,6 +141,7 @@ public class ModuleConfigurationProvider : ModuleConfigurationProviderBase, IMod
             FormTitleField.Create("In the game"),
             ShowRepliesInGame,
             ShowUserMessagesInGame,
+            CameraFocus,
             GameEvents,
             ReactCooldownSeconds
         ));

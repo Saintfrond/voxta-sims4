@@ -42,6 +42,7 @@ The defaults work when the game and Voxta run on the same PC. Settings, under th
 | Character → Sim names | `Character Name = Sim First Last` lines, for characters whose names don't match a Sim. |
 | Show replies in the game | Character replies appear as in-game notifications. |
 | Show my messages in the game | Your messages appear too. |
+| Camera on the speaker | Off, pan to the Sim who is speaking, or follow them until someone else talks. |
 | Game events | Ignore events, tell characters quietly, or let them react right away. |
 | Seconds between reactions | Limits how often a character speaks up on its own. |
 

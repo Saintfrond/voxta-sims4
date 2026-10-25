@@ -168,6 +168,8 @@ public sealed class SimsBridge : IAsyncDisposable
 
     public Task NotifyAsync(NotifyCommand command, CancellationToken cancellationToken) => SendAsync(command, cancellationToken);
 
+    public Task FocusAsync(FocusCommand command, CancellationToken cancellationToken) => SendAsync(command, cancellationToken);
+
     public Task RequestStateAsync(CancellationToken cancellationToken) => SendAsync(new RequestStateCommand(), cancellationToken);
 
     private async Task SendAsync<T>(T message, CancellationToken cancellationToken)

@@ -197,6 +197,20 @@ def test_notification_from_voxta_shows_with_portrait(setup):
     assert icon is bella
 
 
+def test_focus_moves_the_camera_to_sims_on_the_lot(setup):
+    game, voxta, folder, (bella, mortimer, _) = setup
+    voxta.send({"type": "focus", "sim_id": "101", "follow": True})
+    assert wait_for(game, lambda: game.camera)
+    assert game.camera[-1] == (bella.instance, True)
+    # Mortimer is away from the lot: nothing to look at, no camera move, no error.
+    count = len(game.camera)
+    voxta.send({"type": "focus", "sim_id": "102"})
+    voxta.send({"type": "request_state"})  # something observable to wait for after it
+    states = len(voxta.of_type("state"))
+    assert wait_for(game, lambda: len(voxta.of_type("state")) > states)
+    assert len(game.camera) == count
+
+
 def test_game_changes_become_events_and_new_state(setup):
     game, voxta, folder, (bella, _, _) = setup
     states_before = len(voxta.of_type("state"))

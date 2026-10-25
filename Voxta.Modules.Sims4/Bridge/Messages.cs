@@ -143,6 +143,16 @@ public sealed record NotifyCommand
     public required string Text { get; init; }
 }
 
+public sealed record FocusCommand
+{
+    public string Type => "focus";
+
+    public required string SimId { get; init; }
+
+    /// <summary>Keep following the Sim (until the player moves the camera), rather than only panning to them.</summary>
+    public bool Follow { get; init; }
+}
+
 public sealed record RequestStateCommand
 {
     public string Type => "request_state";
